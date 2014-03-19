@@ -1,0 +1,49 @@
+# http://mathias-kettner.de/checkmk_devel_agentbased.html
+
+# set default value of variable (user can override in main.mk)
+#pi_freq_default_values = (65, 85)
+
+# the inventory function (dummy)
+def inventory_pi_freq(info):
+   inventory = []
+   #print info
+   # loop over all output lines of the agent
+   for line in info:
+      chip = line[0]   # device name is in the first column
+      freq = int(line[8].partition(';')[0].partition('=')[2])  #  variable contains current frequency of cpu
+
+      #print chip
+      #print freq
+      inventory.append( (chip, None) )
+
+
+
+   return inventory # return empty list: nothing found
+
+# the check function (dummy)
+# The check function is called by Check_MK once for each item to be check. 
+# It gets three parameters: the item, the check parameters and the agent output. 
+# It must return a tuple with the following components:
+#   * a Nagios status code (0=OK, 1=WARN, 2=CRIT, 3=UNKNOWN)
+#   * a text to be used by Nagios as plugin output
+#   * optionally: performance data
+
+def check_pi_freq(item, params, info):
+   # unpack check parameters
+
+   for line in info:
+      if line[0] == item:
+         freq = int(line[8].partition(';')[0].partition('=')[2])  #  variable contains current frequency of cpu
+         perfdata = [ ( "frequency", freq,"","",700,1200 ) ]
+         return (0, "Frequency at %d MHz" % freq, perfdata)
+
+   return (3,"Frequency reading for %s not found " % item)
+
+# declare the check to Check_MK
+check_info["pi.freq"] = {
+    'check_function':            check_pi_freq,
+    'inventory_function':        inventory_pi_freq,
+    'service_description':       'Current chip frequency',
+    'has_perfdata':              True,
+}
+

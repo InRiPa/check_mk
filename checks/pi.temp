@@ -1,0 +1,56 @@
+# http://mathias-kettner.de/checkmk_devel_agentbased.html
+
+# set default value of variable (user can override in main.mk)
+pi_temp_default_values = (65, 85)
+
+# the inventory function (dummy)
+def inventory_pi_temp(info):
+   inventory = []
+   #print info
+   # loop over all output lines of the agent
+   for line in info:
+      chip = line[0]   # device name is in the first column
+      celsius = line[4]  # SMART variable name in the third
+
+      #print chip
+      #print celsius
+      inventory.append( (chip, "pi_temp_default_values") )
+
+
+
+   return inventory # return empty list: nothing found
+
+# the check function (dummy)
+# The check function is called by Check_MK once for each item to be check. 
+# It gets three parameters: the item, the check parameters and the agent output. 
+# It must return a tuple with the following components:
+#   * a Nagios status code (0=OK, 1=WARN, 2=CRIT, 3=UNKNOWN)
+#   * a text to be used by Nagios as plugin output
+#   * optionally: performance data
+
+def check_pi_temp(item, params, info):
+   # unpack check parameters
+   warn, crit = params
+
+   for line in info:
+      if line[0] == item:
+         celsius = int(line[4])
+         perfdata = [ ( "temp", celsius, warn, crit ) ]
+
+         if celsius >= crit:
+            return (2, "Temperature at %dC" % celsius, perfdata)
+         elif celsius >= warn:
+            return (1, "Temperature at %dC" % celsius, perfdata)
+         else:
+            return (0, "Temperature at %dC" % celsius, perfdata)
+
+   return (3,"Temperature reading for %s not found " % item)
+
+# declare the check to Check_MK
+check_info["pi.temp"] = {
+    'check_function':            check_pi_temp,
+    'inventory_function':        inventory_pi_temp,
+    'service_description':       'Chip temperature %s',
+    'has_perfdata':              True,
+}
+
