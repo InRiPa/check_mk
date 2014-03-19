@@ -1,0 +1,23 @@
+#! /bin/bash
+
+# Reading current temperature from the DS18B20 temperature sensor
+
+# check_mk identifier
+echo '<<<ds18b20>>>'
+
+# path to temperature sensor file where the measurements are read from
+sensorFile="/sys/bus/w1/devices/28-000003ad98f3/w1_slave"
+
+# check if file is available ( oterhwise try 'modprobe w1-gpio' and 'modprobe w1_therm' 
+if [ -f $sensorFile ]
+then
+	currTemp=$(cat $sensorFile)
+	printf "Current temperature = %s\n" "$currTemp"
+else 
+     	currTemp="Error"
+	printf "%s\n" "$currTemp"
+fi  
+
+
+
+

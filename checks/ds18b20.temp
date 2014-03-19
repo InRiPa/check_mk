@@ -1,0 +1,58 @@
+# http://mathias-kettner.de/checkmk_devel_agentbased.html
+
+# set default (float!) value of variable (user can override in main.mk)
+# (crit_lowest, warn_lowest,warn_highest, crit_highest)
+ds18b20_temp_default_values = (0,10,40, 45)
+
+# the inventory function (dummy)
+def inventory_ds18b20_temp(info):
+   inventory = []
+   #print info
+   sensor = "DS18B20"
+   line = info[1] # use just the second of both lines for the measurement reading
+   celsius = float(line[9].partition('=')[2]) / 1000.0  #  check 10th (array 9th) place for temperature measurement
+
+   #print sensor
+   #print celsius
+   inventory.append( (sensor, "ds18b20_temp_default_values") )
+
+
+
+   return inventory # return empty list: nothing found
+
+# the check function (dummy)
+# The check function is called by Check_MK once for each item to be check. 
+# It gets three parameters: the item, the check parameters and the agent output. 
+# It must return a tuple with the following components:
+#   * a Nagios status code (0=OK, 1=WARN, 2=CRIT, 3=UNKNOWN)
+#   * a text to be used by Nagios as plugin output
+#   * optionally: performance data
+
+def check_ds18b20_temp(item, params, info):
+ # unpack check parameters
+  crit_low, warn_low, warn_high,crit_high = params
+  
+  line = info[1] # use just the second of both lines for the measurement reading
+  celsius = float(line[9].partition('=')[2]) / 1000.0  #  check 10th (array 9th) place for temperature measurement
+  
+  
+  perfdata = [ ( "temperature", celsius ) ]
+ 
+  if celsius <= crit_low or celsius >= crit_high:
+     return (2, "Temperature at %dC" % celsius, perfdata)
+  elif celsius <= warn_low or celsius >= warn_high:
+     return (1, "Temperature at %dC" % celsius, perfdata)
+  else:
+     return (0, "Temperature at %dC" % celsius, perfdata)
+
+  return (3,"Temperature reading for %s not found " % item)
+
+
+# declare the check to Check_MK
+check_info["ds18b20.temp"] = {
+    'check_function':            check_ds18b20_temp,
+    'inventory_function':        inventory_ds18b20_temp,
+    'service_description':       'DS18B20 temperature %s',
+    'has_perfdata':              True,
+}
+
